@@ -10,38 +10,70 @@ class RankingTable extends StatelessWidget {
     required this.teamRankingList,
   });
 
+  // Constrói a lista de linhas da tabela
   List<Widget> _getRankingTableItemList() {
-    List<Widget> list = [];
+    // 1. Adiciona o cabeçalho no topo da lista
+    List<Widget> list = [
+      const RankingTableItem(isHeader: true),
+    ];
+
+    // 2. Adiciona os times
     for (int i = 0; i < teamRankingList.length; i++) {
-      int pos = i + 1;
       list.add(
         RankingTableItem(
-          pos: pos.toString(),
+          pos: (i + 1).toString(),
           text: teamRankingList[i].team.name,
-          pts: '00',
-          isLast: pos == teamRankingList.length,
+          pts: '00', // Troque pela pontuação real futuramente
+          isEven: i % 2 == 0, // Verifica se a linha é par para o efeito zebra
         ),
       );
     }
-    return [
-      RankingTableItem(),
-      ...list,
-    ];
+
+    return list;
   }
 
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment:
+          CrossAxisAlignment.stretch, // Estica para ocupar a tela
       children: [
-        Text(
-          'Tabela de Classificação',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 25,
+        // Título da tabela
+        const Padding(
+          padding: EdgeInsets.only(bottom: 12.0),
+          child: Text(
+            'Tabela de Classificação',
+            style: TextStyle(
+              fontWeight: FontWeight.bold,
+              fontSize: 22,
+              color: Colors.black87, // Um preto mais suave que o Colors.black
+            ),
           ),
         ),
-        ..._getRankingTableItemList(),
+
+        // O Container principal que engloba toda a tabela
+        Container(
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(12), // Bordas arredondadas
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(
+                  0.05,
+                ), // Sombra bem leve e elegante
+                blurRadius: 10,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          // O ClipRRect garante que os itens de dentro não ultrapassem a borda arredondada
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Column(
+              children: _getRankingTableItemList(),
+            ),
+          ),
+        ),
       ],
     );
   }

@@ -1,4 +1,3 @@
-import 'package:championship/championship_database.dart';
 import 'package:championship/loading_screen.dart';
 import 'package:championship/team.dart';
 import 'package:championship/team_item.dart';
@@ -7,13 +6,16 @@ import 'package:flutter/material.dart';
 
 class AddTeam extends StatefulWidget {
   final Future<List<Team>> Function() getTeamListDB;
-  final Future<int> Function(String teamNameToSave, {Team? team})
-  onPressedSaveTeam;
+  final Future<int> Function(String teamNameToSave, {Team? team}) saveTeamDB;
+  final Future<int> Function({Team? team}) deleteTeamDB;
+  final Future<int> Function() deleteAllMatchRoundsDB;
 
   const AddTeam({
     super.key,
     required this.getTeamListDB,
-    required this.onPressedSaveTeam,
+    required this.saveTeamDB,
+    required this.deleteTeamDB,
+    required this.deleteAllMatchRoundsDB,
   });
 
   @override
@@ -24,6 +26,7 @@ class _AddTeamState extends State<AddTeam> {
   bool _isLoading = true;
 
   final TextEditingController _controllerNameTeam = TextEditingController();
+  final FocusNode _focusNodenameTeam = FocusNode();
 
   List<Team> _teamList = [];
 
@@ -44,15 +47,8 @@ class _AddTeamState extends State<AddTeam> {
   }
 
   void _deleteTeam({Team? team}) async {
-    if (team != null) {
-      final db = await ChampionshipDatabase.instance.database;
-
-      int result = await db.delete(
-        ChampionshipDatabase.tableTeamName,
-        where: 'id = ?',
-        whereArgs: [team.id],
-      );
-
+    try {
+      int result = await widget.deleteTeamDB.call(team: team);
       if (result != 0) {
         if (!mounted) return;
 
@@ -67,14 +63,27 @@ class _AddTeamState extends State<AddTeam> {
 
         _loadScreen();
       } else {
+        throw Exception();
+      }
+
+      result = await widget.deleteAllMatchRoundsDB();
+      if (result == 0) {
         if (!mounted) return;
         UIUtils.showCustomToast(
           context,
-          'Erro ao excluir equipe',
+          'Erro ao resetar rodadas',
           Colors.white,
           Colors.red,
         );
       }
+    } catch (e) {
+      if (!mounted) return;
+      UIUtils.showCustomToast(
+        context,
+        'Erro ao excluir equipe',
+        Colors.white,
+        Colors.red,
+      );
     }
   }
 
@@ -137,7 +146,7 @@ class _AddTeamState extends State<AddTeam> {
 
   void _onPressedSaveTeam({Team? team}) async {
     try {
-      int result = await widget.onPressedSaveTeam.call(
+      int result = await widget.saveTeamDB.call(
         _controllerNameTeam.text,
         team: team,
       );
@@ -156,6 +165,19 @@ class _AddTeamState extends State<AddTeam> {
         _loadScreen();
       } else {
         throw Exception();
+      }
+
+      if (team == null) {
+        result = await widget.deleteAllMatchRoundsDB();
+        if (result == 0) {
+          if (!mounted) return;
+          UIUtils.showCustomToast(
+            context,
+            'Erro ao resetar rodadas',
+            Colors.white,
+            Colors.red,
+          );
+        }
       }
     } catch (e) {
       if (!mounted) return;
@@ -191,6 +213,7 @@ class _AddTeamState extends State<AddTeam> {
     } else {
       _controllerNameTeam.clear();
     }
+    _focusNodenameTeam.requestFocus();
     await showDialog(
       context: context,
       builder: (_) {
@@ -212,6 +235,7 @@ class _AddTeamState extends State<AddTeam> {
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
+                  focusNode: _focusNodenameTeam,
                   controller: _controllerNameTeam,
                   decoration: InputDecoration(
                     isDense: true,

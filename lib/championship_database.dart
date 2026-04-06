@@ -6,7 +6,7 @@ class ChampionshipDatabase {
   static final ChampionshipDatabase instance = ChampionshipDatabase._init();
   static Database? _database;
   static String tableTeamName = 'team';
-  static String tableMatchName = 'match';
+  static String tableMatchRoundsName = 'match_rounds';
 
   ChampionshipDatabase._init();
 
@@ -26,10 +26,10 @@ class ChampionshipDatabase {
 
     return await openDatabase(
       path,
-      version:
-          1, // Aumente este número no futuro se precisar alterar tabelas (migrações)
+      version: 4,
       onConfigure: _onConfigure,
       onCreate: _createDB,
+      onUpgrade: _onUpgrade,
     );
   }
 
@@ -53,7 +53,7 @@ class ChampionshipDatabase {
     // Obs: Em SQL, não usamos camelCase como no Dart,
     // mas mantive 'team1Pts' e 'team2Pts' como você pediu para manter a compatibilidade.
     await db.execute('''
-      CREATE TABLE $tableMatchName (
+      CREATE TABLE $tableMatchRoundsName (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         round INTEGER NOT NULL,
         team1 INTEGER NOT NULL,
@@ -64,6 +64,17 @@ class ChampionshipDatabase {
         FOREIGN KEY (team2) REFERENCES team (id) ON DELETE CASCADE
       )
     ''');
+  }
+
+  Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
+    // 1. Apaga a tabela de partidas primeiro, pois ela depende da tabela de times
+    await db.execute('DROP TABLE IF EXISTS $tableMatchRoundsName');
+
+    // 2. Apaga a tabela de times
+    await db.execute('DROP TABLE IF EXISTS $tableTeamName');
+
+    // 3. Chama o método de criação para reconstruir as tabelas com a estrutura nova
+    await _createDB(db, newVersion);
   }
 
   // Fecha a conexão com o banco (geralmente usado quando o app é fechado)

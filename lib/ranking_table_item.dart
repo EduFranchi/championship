@@ -4,95 +4,83 @@ class RankingTableItem extends StatelessWidget {
   final String? pos;
   final String? text;
   final String? pts;
-  final bool isLast;
+  final bool isHeader;
+  final bool isEven; // Para controlar a cor alternada
 
   const RankingTableItem({
     super.key,
     this.pos,
     this.text,
     this.pts,
-    this.isLast = false,
+    this.isHeader = false,
+    this.isEven = false,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Container(
-          width: 45,
-          height: 35,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(width: isLast ? 4 : 2),
-              top: BorderSide(width: 2),
-              left: BorderSide(width: 4),
-              right: BorderSide(width: 2),
-            ),
-            color: pts == null ? Colors.black : Colors.white,
-          ),
-          child: Center(
-            child: Text(
-              pos ?? 'POS',
-              style: TextStyle(
-                fontSize: pos == null ? 15 : 20,
-                fontWeight: pos == null ? FontWeight.bold : FontWeight.normal,
-                color: pos == null ? Colors.white : Colors.black,
-              ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: Container(
-            height: 35,
-            padding: EdgeInsets.symmetric(horizontal: 10),
-            decoration: BoxDecoration(
-              border: Border(
-                bottom: BorderSide(width: isLast ? 4 : 2),
-                top: BorderSide(width: 2),
-                left: BorderSide(width: 2),
-                right: BorderSide(width: 2),
-              ),
-              color: pts == null ? Colors.black : Colors.white,
-            ),
-            child: Align(
-              alignment: AlignmentGeometry.centerStart,
+    // Define as cores com base no tipo da linha (cabeçalho, par ou ímpar)
+    final backgroundColor = isHeader
+        ? const Color(0xFF1E1E1E) // Cor escura para o cabeçalho
+        : (isEven ? Colors.grey[50] : Colors.white); // Efeito Zebra
+
+    final textColor = isHeader ? Colors.white : Colors.black87;
+    final fontWeight = isHeader ? FontWeight.bold : FontWeight.w500;
+
+    return Container(
+      height: 45, // Uma altura um pouco maior deixa a leitura mais confortável
+      color: backgroundColor,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      child: Row(
+        children: [
+          // Coluna: POS (Posição)
+          SizedBox(
+            width: 40,
+            child: Center(
               child: Text(
-                text ?? 'EQUIPE',
+                pos ?? 'POS',
                 style: TextStyle(
-                  fontSize: pos == null ? 15 : 17,
-                  fontWeight: text == null
-                      ? FontWeight.bold
-                      : FontWeight.normal,
-                  color: text == null ? Colors.white : Colors.black,
+                  fontSize: 14,
+                  fontWeight: fontWeight,
+                  color: textColor,
                 ),
               ),
             ),
           ),
-        ),
-        Container(
-          width: 45,
-          height: 35,
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(width: isLast ? 4 : 2),
-              top: BorderSide(width: 2),
-              left: BorderSide(width: 2),
-              right: BorderSide(width: 4),
-            ),
-            color: pts == null ? Colors.black : Colors.white,
-          ),
-          child: Center(
-            child: Text(
-              pts ?? 'PTS',
-              style: TextStyle(
-                fontSize: pts == null ? 15 : 20,
-                fontWeight: FontWeight.bold,
-                color: pts == null ? Colors.white : Colors.black,
+
+          // Coluna: EQUIPE (O Expanded faz ela ocupar todo o espaço restante)
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Text(
+                text ?? 'EQUIPE',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: isHeader ? FontWeight.bold : FontWeight.normal,
+                  color: textColor,
+                ),
+                maxLines: 1, // Previne que a linha quebre
+                overflow: TextOverflow
+                    .ellipsis, // Coloca "..." se o nome for muito grande
               ),
             ),
           ),
-        ),
-      ],
+
+          // Coluna: PTS (Pontos)
+          SizedBox(
+            width: 45,
+            child: Center(
+              child: Text(
+                pts ?? 'PTS',
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold, // Pontos sempre em destaque
+                  color: textColor,
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

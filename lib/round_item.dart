@@ -19,23 +19,34 @@ class RoundItem extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Text(
-          team1Name,
-          style: TextStyle(
-            fontSize: 15,
+        Expanded(
+          child: Text(
+            team1Name,
+            textAlign: TextAlign.end,
+            style: TextStyle(
+              fontSize: 15,
+            ),
           ),
         ),
-        Text(
-          '  $team1Pts × $team2Pts  ',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            fontSize: 20,
+        SizedBox(
+          width: 70,
+          child: Center(
+            child: Text(
+              '$team1Pts × $team2Pts',
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 20,
+              ),
+            ),
           ),
         ),
-        Text(
-          team2Name,
-          style: TextStyle(
-            fontSize: 15,
+        Expanded(
+          child: Text(
+            team2Name,
+            textAlign: TextAlign.start,
+            style: TextStyle(
+              fontSize: 15,
+            ),
           ),
         ),
       ],

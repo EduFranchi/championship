@@ -181,8 +181,8 @@ class _AddTeamState extends State<AddTeam> {
             ),
             ElevatedButton(
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red[50],
-                foregroundColor: Colors.red[700],
+                backgroundColor: Colors.red[700],
+                foregroundColor: Colors.red[50],
                 elevation: 0,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -309,7 +309,7 @@ class _AddTeamState extends State<AddTeam> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[800],
+                  backgroundColor: const Color(0xFF4B0082),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -400,7 +400,8 @@ class _AddTeamState extends State<AddTeam> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color(0xFF4B0082),
+        foregroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'Equipes',
@@ -408,7 +409,9 @@ class _AddTeamState extends State<AddTeam> {
         ),
         centerTitle: true,
       ),
-      body: _buildBody(),
+      body: SafeArea(
+        child: _buildBody(),
+      ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () => _showAddEditTeamDialog(),
         icon: const Icon(Icons.add),
@@ -416,7 +419,7 @@ class _AddTeamState extends State<AddTeam> {
           'Adicionar',
           style: TextStyle(fontWeight: FontWeight.bold),
         ),
-        backgroundColor: Colors.blue[800],
+        backgroundColor: const Color(0xFF4B0082),
         foregroundColor: Colors.white,
       ),
     );

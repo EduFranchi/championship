@@ -90,7 +90,7 @@ class RankingTableItem extends StatelessWidget {
                   fontSize: 16, // Letra um pouco maior que o resto
                   fontWeight: FontWeight.w900, // Peso máximo de negrito
                   // Usa o azul tema para destacar os pontos, mantendo branco no cabeçalho
-                  color: isHeader ? Colors.white : Colors.blue[800],
+                  color: isHeader ? Colors.white : const Color(0xFF4B0082),
                 ),
               ),
             ),

@@ -205,7 +205,7 @@ class _HomeState extends State<Home> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[800],
+                  backgroundColor: const Color(0xFF4B0082),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -565,12 +565,11 @@ class _HomeState extends State<Home> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color(0xFF4B0082),
+        foregroundColor: Colors.white,
         title: const Text(
           'Championship',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         actions: [
@@ -581,12 +580,19 @@ class _HomeState extends State<Home> {
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: const Icon(Icons.more_vert, size: 30),
+            child: const Icon(
+              Icons.more_vert,
+              size: 30,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(width: 10),
         ],
       ),
-      body: _getBody(),
+      // MUDANÇA AQUI: Adicione o SafeArea em volta do _getBody()
+      body: SafeArea(
+        child: _getBody(),
+      ),
     );
   }
 }

@@ -251,7 +251,7 @@ class _EditMatchResultsState extends State<EditMatchResults> {
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[800],
+                  backgroundColor: const Color(0xFF4B0082),
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -320,7 +320,7 @@ class _EditMatchResultsState extends State<EditMatchResults> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.blue[800],
+              color: const Color(0xFF4B0082),
             ),
           ),
         ),
@@ -353,7 +353,8 @@ class _EditMatchResultsState extends State<EditMatchResults> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        backgroundColor: const Color(0xFF4B0082),
+        foregroundColor: Colors.white,
         elevation: 0,
         title: const Text(
           'Resultados',
@@ -361,7 +362,9 @@ class _EditMatchResultsState extends State<EditMatchResults> {
         ),
         centerTitle: true,
       ),
-      body: _buildBody(),
+      body: SafeArea(
+        child: _buildBody(),
+      ),
     );
   }
 }

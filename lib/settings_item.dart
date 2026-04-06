@@ -32,12 +32,14 @@ class SettingsItem extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   // Usando o withValues atualizado que você já aprendeu!
-                  color: Colors.blue.withValues(alpha: 0.1),
+                  color: const Color(0xFF4B0082).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   iconData,
-                  color: Colors.blue[800], // Ícone com a cor principal escura
+                  color: const Color(
+                    0xFF4B0082,
+                  ), // Ícone com a cor principal escura
                   size: 22,
                 ),
               ),

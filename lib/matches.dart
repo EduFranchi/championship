@@ -57,7 +57,7 @@ class Matches extends StatelessWidget {
                   horizontal: 24,
                   vertical: 12,
                 ),
-                backgroundColor: Colors.blue[800],
+                backgroundColor: const Color(0xFF4B0082),
                 foregroundColor: Colors.white,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
@@ -94,7 +94,9 @@ class Matches extends StatelessWidget {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: Colors.blue[800], // Mesma cor temática do resto do app
+              color: const Color(
+                0xFF4B0082,
+              ), // Mesma cor temática do resto do app
             ),
           ),
         ),

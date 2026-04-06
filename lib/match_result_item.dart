@@ -44,8 +44,8 @@ class MatchResultItem extends StatelessWidget {
     Color scoreTextColor = Colors.grey.shade500;
 
     if (team1Won || team2Won) {
-      scoreBgColor = Colors.blue.withValues(alpha: 0.1);
-      scoreTextColor = Colors.blue.shade800;
+      scoreBgColor = const Color(0xFF4B0082).withValues(alpha: 0.1);
+      scoreTextColor = const Color(0xFF4B0082);
     } else if (isTie) {
       scoreBgColor = Colors.orange.withValues(alpha: 0.1);
       scoreTextColor = Colors.orange.shade800;

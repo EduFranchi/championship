@@ -25,27 +25,49 @@ class AddTeam extends StatefulWidget {
 class _AddTeamState extends State<AddTeam> {
   bool _isLoading = true;
 
-  final TextEditingController _controllerNameTeam = TextEditingController();
-  final FocusNode _focusNodenameTeam = FocusNode();
+  // Controlador de texto
+  final TextEditingController _teamNameController = TextEditingController();
 
   List<Team> _teamList = [];
 
-  List<Widget> _getTeamList() {
-    return _teamList
-        .map(
-          (e) => TeamItem(
-            team: e,
-            editTeam: (team) {
-              _onPressedDialogTeam(team: team);
-            },
-            deleteTeam: (team) {
-              _onPressedDeleteTeam(team: team);
-            },
-          ),
-        )
-        .toList();
+  @override
+  void initState() {
+    super.initState();
+    // Chama o carregamento direto, sem precisar de uma função _init() intermediária
+    _loadData();
   }
 
+  // MÉTODO CRÍTICO: Previne vazamento de memória quando a tela é fechada
+  @override
+  void dispose() {
+    _teamNameController.dispose();
+    super.dispose();
+  }
+
+  // Carrega os dados do banco de dados
+  Future<void> _loadData() async {
+    _isLoading = true;
+    if (!mounted) return;
+    setState(() {});
+
+    try {
+      _teamList = await widget.getTeamListDB();
+    } catch (e) {
+      if (!mounted) return;
+      UIUtils.showCustomToast(
+        context,
+        'Erro ao carregar lista de equipes',
+        Colors.white,
+        Colors.red,
+      );
+    }
+
+    _isLoading = false;
+    if (!mounted) return;
+    setState(() {});
+  }
+
+  // Lógica de deleção com reset das rodadas
   void _deleteTeam({Team? team}) async {
     try {
       int result = await widget.deleteTeamDB.call(team: team);
@@ -54,14 +76,13 @@ class _AddTeamState extends State<AddTeam> {
 
         UIUtils.showCustomToast(
           context,
-          'Equipe excluida com sucesso',
+          'Equipe excluída com sucesso',
           Colors.white,
           Colors.green,
         );
 
         Navigator.pop(context);
-
-        _loadScreen();
+        _loadData();
       } else {
         throw Exception();
       }
@@ -87,67 +108,11 @@ class _AddTeamState extends State<AddTeam> {
     }
   }
 
-  void _onPressedDeleteTeam({Team? team}) async {
-    await showDialog(
-      context: context,
-      builder: (_) {
-        return GestureDetector(
-          onTap: () {
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
-          child: AlertDialog(
-            constraints: BoxConstraints(
-              minWidth: double.infinity,
-            ),
-            title: Text(
-              'Excluir Equipe',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            content: Text(
-              'Ao excluir a equipe, as rodadas serão resetadas! Deseja continuar?',
-              style: TextStyle(
-                fontSize: 17,
-              ),
-            ),
-            actions: [
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text(
-                  'Não',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.normal,
-                  ),
-                ),
-              ),
-              TextButton(
-                onPressed: () {
-                  _deleteTeam(team: team);
-                },
-                child: Text(
-                  'Sim',
-                  style: TextStyle(
-                    color: Colors.red,
-                    fontSize: 20,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  void _onPressedSaveTeam({Team? team}) async {
+  // Lógica para salvar a equipe
+  void _saveTeam({Team? team}) async {
     try {
       int result = await widget.saveTeamDB.call(
-        _controllerNameTeam.text,
+        _teamNameController.text.trim(),
         team: team,
       );
       if (result != 0) {
@@ -161,8 +126,7 @@ class _AddTeamState extends State<AddTeam> {
         );
 
         Navigator.pop(context);
-
-        _loadScreen();
+        _loadData();
       } else {
         throw Exception();
       }
@@ -190,81 +154,170 @@ class _AddTeamState extends State<AddTeam> {
     }
   }
 
-  List<Widget> _rememberReset({Team? team}) {
-    if (team == null) {
-      return [
-        const SizedBox(height: 5),
-        Text(
-          'Obs: Ao adicionar uma equipe, as rodadas serão resetadas!',
-          style: TextStyle(
-            fontStyle: FontStyle.italic,
-            fontSize: 15,
+  // Diálogo de confirmação de exclusão (Visual Moderno)
+  void _showDeleteTeamDialog({Team? team}) async {
+    await showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
           ),
-        ),
-      ];
-    } else {
-      return [];
-    }
+          title: const Text(
+            'Excluir Equipe?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Ao excluir a equipe, todas as rodadas serão resetadas! Deseja continuar?',
+            style: TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey[700], fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[50],
+                foregroundColor: Colors.red[700],
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: () => _deleteTeam(team: team),
+              child: const Text(
+                'Excluir',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
-  void _onPressedDialogTeam({Team? team}) async {
+  // Caixa visual de alerta para não usar apenas texto itálico
+  Widget _buildWarningResetBox({Team? team}) {
     if (team != null) {
-      _controllerNameTeam.text = team.name ?? '';
-    } else {
-      _controllerNameTeam.clear();
+      return const SizedBox.shrink(); // Retorna vazio se for edição
     }
-    _focusNodenameTeam.requestFocus();
+
+    return Container(
+      margin: const EdgeInsets.only(top: 16),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.orange.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.orange.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(
+            Icons.warning_amber_rounded,
+            color: Colors.orange,
+            size: 24,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Atenção: Ao adicionar uma nova equipe, todas as rodadas atuais serão resetadas!',
+              style: TextStyle(
+                color: Colors.orange[800],
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Diálogo para Adicionar/Editar equipe (Visual Moderno)
+  void _showAddEditTeamDialog({Team? team}) async {
+    if (team != null) {
+      _teamNameController.text = team.name ?? '';
+    } else {
+      _teamNameController.clear();
+    }
+
     await showDialog(
       context: context,
       builder: (_) {
         return GestureDetector(
-          onTap: () {
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: AlertDialog(
-            constraints: BoxConstraints(
-              minWidth: double.infinity,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
             ),
             title: Text(
-              '${team == null ? 'Adicionar' : 'Editar'} Equipe',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
+              team == null ? 'Adicionar Equipe' : 'Editar Equipe',
+              style: const TextStyle(fontWeight: FontWeight.bold),
             ),
             content: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 TextField(
-                  focusNode: _focusNodenameTeam,
-                  controller: _controllerNameTeam,
+                  controller: _teamNameController,
+                  autofocus: true, // Substitui o FocusNode de forma limpa!
+                  textCapitalization: TextCapitalization.words,
+                  textInputAction: TextInputAction
+                      .done, // Mostra o botão "Confirmar" no teclado
+                  onSubmitted: (value) {
+                    // Salva a equipe ao apertar o botão de confirmar do teclado
+                    if (value.trim().isNotEmpty) {
+                      _saveTeam(team: team);
+                    } else {
+                      UIUtils.showCustomToast(
+                        context,
+                        'Nome da equipe está vazio',
+                        Colors.white,
+                        Colors.red,
+                      );
+                    }
+                  },
                   decoration: InputDecoration(
-                    isDense: true,
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.all(5),
-                    hintText: 'Escreva o nome da equipe',
+                    labelText: 'Nome da equipe',
+                    prefixIcon: const Icon(Icons.shield_outlined),
+                    filled: true,
+                    fillColor: Colors.grey[50],
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                      borderSide: BorderSide(color: Colors.grey[300]!),
+                    ),
                   ),
                 ),
-                ..._rememberReset(team: team),
+                _buildWarningResetBox(team: team),
               ],
             ),
             actions: [
               TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                },
-                child: const Text(
+                onPressed: () => Navigator.pop(context),
+                child: Text(
                   'Cancelar',
-                  style: TextStyle(
-                    color: Colors.black,
-                    fontSize: 20,
-                    fontWeight: FontWeight.normal,
-                  ),
+                  style: TextStyle(color: Colors.grey[700], fontSize: 16),
                 ),
               ),
-              TextButton(
+              ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue[800],
+                  foregroundColor: Colors.white,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 onPressed: () {
-                  if (_controllerNameTeam.text.isNotEmpty) {
-                    _onPressedSaveTeam(team: team);
+                  if (_teamNameController.text.trim().isNotEmpty) {
+                    _saveTeam(team: team);
                   } else {
                     UIUtils.showCustomToast(
                       context,
@@ -276,9 +329,9 @@ class _AddTeamState extends State<AddTeam> {
                 },
                 child: Text(
                   team == null ? 'Adicionar' : 'Salvar',
-                  style: TextStyle(
-                    color: Colors.green.shade700,
-                    fontSize: 20,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
                 ),
               ),
@@ -289,69 +342,58 @@ class _AddTeamState extends State<AddTeam> {
     );
   }
 
-  Widget _getBody() {
+  // Constrói o corpo da tela
+  Widget _buildBody() {
     if (_isLoading) {
-      return LoadingScreen();
-    } else {
-      return SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            children: [
-              ..._getTeamList(),
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: _onPressedDialogTeam,
-                style: TextButton.styleFrom(
-                  padding: EdgeInsets.all(5),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  backgroundColor: Colors.green,
-                ),
-                child: Icon(
-                  Icons.add,
-                  size: 30,
-                  color: Colors.white,
-                ),
+      return const LoadingScreen();
+    }
+
+    // Empty State: Tela quando não há times
+    if (_teamList.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.group_add_outlined, size: 64, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              'Nenhuma equipe cadastrada',
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey[600],
+                fontWeight: FontWeight.w500,
               ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Adicione as equipes para começar o campeonato.',
+              style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+            ),
+          ],
         ),
       );
     }
-  }
 
-  Future<void> _loadScreen() async {
-    _isLoading = true;
-    if (!mounted) return;
-    setState(() {});
-
-    try {
-      _teamList = await widget.getTeamListDB();
-    } catch (e) {
-      if (!mounted) return;
-      UIUtils.showCustomToast(
-        context,
-        'Erro ao carregar lista de equipe',
-        Colors.white,
-        Colors.red,
-      );
-    }
-
-    _isLoading = false;
-    if (!mounted) return;
-    setState(() {});
-  }
-
-  void _init() async {
-    await _loadScreen();
-  }
-
-  @override
-  void initState() {
-    super.initState();
-    _init();
+    // Lista de Times
+    return ListView.separated(
+      physics: const BouncingScrollPhysics(),
+      padding: const EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 16,
+        bottom: 80,
+      ),
+      itemCount: _teamList.length,
+      separatorBuilder: (context, index) => const SizedBox(height: 8),
+      itemBuilder: (context, index) {
+        final team = _teamList[index];
+        return TeamItem(
+          team: team,
+          editTeam: (t) => _showAddEditTeamDialog(team: t),
+          deleteTeam: (t) => _showDeleteTeamDialog(team: t),
+        );
+      },
+    );
   }
 
   @override
@@ -359,15 +401,24 @@ class _AddTeamState extends State<AddTeam> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
-          'Adicionar equipe',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-          ),
+        elevation: 0,
+        title: const Text(
+          'Equipes',
+          style: TextStyle(fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
       ),
-      body: _getBody(),
+      body: _buildBody(),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () => _showAddEditTeamDialog(),
+        icon: const Icon(Icons.add),
+        label: const Text(
+          'Adicionar',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        backgroundColor: Colors.blue[800],
+        foregroundColor: Colors.white,
+      ),
     );
   }
 }

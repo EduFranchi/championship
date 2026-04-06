@@ -58,8 +58,8 @@ class RankingTable extends StatelessWidget {
             borderRadius: BorderRadius.circular(12), // Bordas arredondadas
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(
-                  0.05,
+                color: Colors.black.withValues(
+                  alpha: 0.05,
                 ), // Sombra bem leve e elegante
                 blurRadius: 10,
                 offset: const Offset(0, 4),

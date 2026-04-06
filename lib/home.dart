@@ -3,6 +3,7 @@ import 'dart:developer';
 import 'package:championship/add_team.dart';
 import 'package:championship/championship_database.dart';
 import 'package:championship/custom_shared_prefs.dart';
+import 'package:championship/edit_match_results.dart';
 import 'package:championship/loading_screen.dart';
 import 'package:championship/match_rounds.dart';
 import 'package:championship/matches.dart';
@@ -186,7 +187,7 @@ class _HomeState extends State<Home> {
     );
   }
 
-  void _addTeam() {
+  void _onTapAddTeam() {
     Navigator.pop(context);
     Navigator.push(
       context,
@@ -203,49 +204,84 @@ class _HomeState extends State<Home> {
     });
   }
 
-  void _onPressedAction() {
+  void _onTapEditMatchResults() {
+    Navigator.pop(context);
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => EditMatchResults(
+          getMatchRoundsDB: _getMatchRoundsListDB,
+          getTeamListDB: _getTeamListDB,
+          saveMatchRoundsListDB: _saveMatchRoundsDB,
+        ),
+      ),
+    ).then((_) async {
+      await _loadScreen();
+    });
+  }
+
+  void _onShowOptionsBottomSheet() {
     showModalBottomSheet(
       context: context,
+      // 1. Permite que o modal cresça além da metade da tela se tiver muitos itens
+      isScrollControlled: true,
+      // 2. Cria o puxador cinza no topo automaticamente!
+      showDragHandle: true,
+      // 3. Como usamos o puxador nativo, a cor pode ir direto aqui
+      backgroundColor: Colors.white,
+      // 4. Bordas arredondadas nativas do modal
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
-          top: Radius.circular(5),
+          top: Radius.circular(24),
         ),
       ),
       builder: (BuildContext context) {
-        return Container(
-          padding: const EdgeInsets.all(16.0),
-          height: 220,
-          width: double.infinity,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 10),
-              Text(
-                'Opções',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
+        // Como o Flutter agora desenha o fundo e o puxador, nosso builder fica muito mais limpo
+        return SafeArea(
+          child: Padding(
+            // Retiramos o padding do topo (top: 0) porque o drag handle já dá o espaçamento ideal
+            padding: const EdgeInsets.only(
+              left: 24,
+              right: 24,
+              bottom: 24,
+              top: 0,
+            ),
+            child: Column(
+              mainAxisSize:
+                  MainAxisSize.min, // Ocupa apenas o tamanho dos itens
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Opções',
+                  style: TextStyle(
+                    fontSize: 22,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.black87,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 10),
-              SettingsItem(
-                onTap: _onTapEditMetrics,
-                iconData: Icons.edit,
-                text: 'Editar métricas',
-              ),
-              const SizedBox(height: 5),
-              SettingsItem(
-                onTap: _addTeam,
-                iconData: Icons.add,
-                text: 'Adicionar equipe',
-              ),
-              const SizedBox(height: 5),
-              SettingsItem(
-                onTap: () {},
-                iconData: Icons.edit_square,
-                text: 'Alterar resultado da(s) partida(s)',
-              ),
-            ],
+                const SizedBox(height: 16),
+
+                SettingsItem(
+                  onTap: _onTapEditMetrics,
+                  iconData: Icons.edit,
+                  text: 'Editar métricas',
+                ),
+                const SizedBox(height: 12),
+
+                SettingsItem(
+                  onTap: _onTapAddTeam,
+                  iconData: Icons.add,
+                  text: 'Adicionar equipe',
+                ),
+                const SizedBox(height: 12),
+
+                SettingsItem(
+                  onTap: _onTapEditMatchResults,
+                  iconData: Icons.edit_square,
+                  text: 'Alterar resultado da(s) partida(s)',
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -566,7 +602,7 @@ class _HomeState extends State<Home> {
         centerTitle: true,
         actions: [
           TextButton(
-            onPressed: _onPressedAction,
+            onPressed: _onShowOptionsBottomSheet,
             style: TextButton.styleFrom(
               padding: EdgeInsets.all(5),
               minimumSize: Size.zero,

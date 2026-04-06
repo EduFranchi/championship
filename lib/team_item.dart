@@ -15,61 +15,60 @@ class TeamItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(vertical: 5),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Text(
-                team.name ?? '',
-                style: TextStyle(
-                  fontSize: 20,
-                  color: Colors.black,
-                ),
-              ),
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  TextButton(
-                    onPressed: () {
-                      editTeam.call(team);
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.all(5),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Icon(
-                      Icons.edit,
-                      size: 25,
-                      color: Colors.black,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  TextButton(
-                    onPressed: () {
-                      deleteTeam.call(team);
-                    },
-                    style: TextButton.styleFrom(
-                      padding: EdgeInsets.all(5),
-                      minimumSize: Size.zero,
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                    ),
-                    child: Icon(
-                      Icons.delete,
-                      size: 25,
-                      color: Colors.red,
-                    ),
-                  ),
-                ],
-              ),
-            ],
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.02),
+            blurRadius: 4,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: ListTile(
+        // Sem o ícone, aumentamos um pouquinho o padding esquerdo (16)
+        // para o texto não colar na borda do Card.
+        contentPadding: const EdgeInsets.only(
+          left: 16,
+          right: 8,
+          top: 4,
+          bottom: 4,
         ),
-        const Divider(),
-      ],
+
+        // Removemos o 'leading' completamente!
+        title: Text(
+          team.name ?? 'Equipe sem nome',
+          style: const TextStyle(
+            fontSize: 16, // Voltei para 16 pois agora tem bastante espaço
+            fontWeight: FontWeight.w600,
+            color: Colors.black87,
+            height: 1.3,
+          ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              color: Colors.blueGrey,
+              tooltip: 'Editar',
+              onPressed: () => editTeam(team),
+            ),
+            IconButton(
+              icon: const Icon(Icons.delete_outline),
+              color: Colors.red[400],
+              tooltip: 'Excluir',
+              onPressed: () => deleteTeam(team),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }

@@ -36,9 +36,9 @@ class _HomeState extends State<Home> {
   List<TeamRanking> _teamRankingList = [];
 
   Future<void> _getWinAndDrawValue() async {
-    int winValue = await CustomSharedPrefs.getWinValue() ?? 0;
+    int winValue = await CustomSharedPrefs.getWinValue() ?? 3;
     _controllerWin.text = winValue.toString();
-    int drawValue = await CustomSharedPrefs.getDrawValue() ?? 0;
+    int drawValue = await CustomSharedPrefs.getDrawValue() ?? 1;
     _controllerDraw.text = drawValue.toString();
   }
 
@@ -102,7 +102,6 @@ class _HomeState extends State<Home> {
       return (a.team.name ?? '').compareTo(b.team.name ?? '');
     });
   }
-  // ---------------------------------
 
   void _onTapEditMetrics() async {
     await _getWinAndDrawValue();
@@ -242,8 +241,6 @@ class _HomeState extends State<Home> {
     );
   }
 
-  // --- MANTENHA AS FUNÇÕES: _onTapAddTeam, _onTapEditMatchResults, _onShowOptionsBottomSheet, _onGenerateRaffle AQUI ---
-  // (Elas são as mesmas que você me mandou)
   void _onTapAddTeam() {
     Navigator.pop(context);
     Navigator.push(
@@ -270,11 +267,58 @@ class _HomeState extends State<Home> {
           getMatchRoundsDB: _getMatchRoundsListDB,
           getTeamListDB: _getTeamListDB,
           saveMatchRoundsListDB: _saveMatchRoundsDB,
+          onGenerateRaffle: _onGenerateRaffle,
         ),
       ),
     ).then((_) async {
       await _loadScreen(); // O _loadScreen também recalcula a tabela agora!
     });
+  }
+
+  void _onTapDeleteAllData({Team? team}) async {
+    Navigator.pop(context);
+    await showDialog(
+      context: context,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Excluir dados salvos?',
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text(
+            'Ao excluir todos os dados salvos, não será possível recuperá-los. Deseja continuar?',
+            style: TextStyle(fontSize: 16, color: Colors.black87),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(
+                'Cancelar',
+                style: TextStyle(color: Colors.grey[700], fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red[700],
+                foregroundColor: Colors.red[50],
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              onPressed: _deleteAllData,
+              child: const Text(
+                'Excluir',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _onShowOptionsBottomSheet() {
@@ -327,6 +371,13 @@ class _HomeState extends State<Home> {
                   iconData: Icons.edit_square,
                   text: 'Alterar resultado da(s) partida(s)',
                 ),
+                const SizedBox(height: 12),
+                SettingsItem(
+                  onTap: _onTapDeleteAllData,
+                  iconData: Icons.delete,
+                  text: 'Excluir dados salvos',
+                  isDelete: true,
+                ),
               ],
             ),
           ),
@@ -336,7 +387,7 @@ class _HomeState extends State<Home> {
   }
 
   Future<void> _onGenerateRaffle() async {
-    if (_teamList.length > 2) {
+    if (_teamList.length >= 2) {
       _isLoading = true;
       if (!mounted) return;
       setState(() {});
@@ -523,7 +574,25 @@ class _HomeState extends State<Home> {
     return db.delete(ChampionshipDatabase.tableMatchRoundsName);
   }
 
-  // --------------------------------------------------------------------------
+  Future<void> _deleteAllData() async {
+    try {
+      final db = await ChampionshipDatabase.instance.database;
+
+      await ChampionshipDatabase.dropAllTables(db);
+      await _loadScreen();
+    } catch (e) {
+      if (!mounted) return;
+      UIUtils.showCustomToast(
+        context,
+        'Erro ao excluir dados',
+        Colors.white,
+        Colors.red,
+      );
+    }
+
+    if (!mounted) return;
+    Navigator.pop(context);
+  }
 
   Future<void> _loadScreen() async {
     _isLoading = true;

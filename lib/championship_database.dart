@@ -40,7 +40,7 @@ class ChampionshipDatabase {
   }
 
   // Método onde executamos o SQL para criar as tabelas
-  Future _createDB(Database db, int version) async {
+  static Future _createDB(Database db, int version) async {
     // 1. Criando a tabela 'team'
     await db.execute('''
       CREATE TABLE $tableTeamName (
@@ -67,14 +67,19 @@ class ChampionshipDatabase {
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
-    // 1. Apaga a tabela de partidas primeiro, pois ela depende da tabela de times
+    await dropAllTables(db, newVersion: newVersion);
+  }
+
+  static Future dropAllTables(Database db, {int? newVersion}) async {
+    // Apaga a tabela de partidas primeiro, pois ela depende da tabela de times
     await db.execute('DROP TABLE IF EXISTS $tableMatchRoundsName');
 
-    // 2. Apaga a tabela de times
+    // Apaga a tabela de times
     await db.execute('DROP TABLE IF EXISTS $tableTeamName');
 
-    // 3. Chama o método de criação para reconstruir as tabelas com a estrutura nova
-    await _createDB(db, newVersion);
+    int version = newVersion ?? await db.getVersion();
+    // Chama o método de criação para reconstruir as tabelas com a estrutura nova
+    await _createDB(db, version);
   }
 
   // Fecha a conexão com o banco (geralmente usado quando o app é fechado)

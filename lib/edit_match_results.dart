@@ -2,7 +2,7 @@ import 'package:championship/loading_screen.dart';
 import 'package:championship/match_rounds.dart';
 import 'package:championship/team.dart';
 import 'package:championship/ui_utils.dart';
-import 'package:championship/match_result_item.dart'; // <-- IMPORTANTE
+import 'package:championship/match_result_item.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -11,12 +11,14 @@ class EditMatchResults extends StatefulWidget {
   final Future<List<Team>> Function() getTeamListDB;
   final Future<void> Function(List<MatchRounds> matchRoundsList)
   saveMatchRoundsListDB;
+  final Future<void> Function() onGenerateRaffle;
 
   const EditMatchResults({
     super.key,
     required this.getMatchRoundsDB,
     required this.getTeamListDB,
     required this.saveMatchRoundsListDB,
+    required this.onGenerateRaffle,
   });
 
   @override
@@ -349,11 +351,40 @@ class _EditMatchResultsState extends State<EditMatchResults> {
     );
   }
 
+  Widget? _getFloatingActionButton() {
+    if (_matchList.isEmpty) {
+      return FloatingActionButton.extended(
+        onPressed: () async {
+          await widget.onGenerateRaffle.call();
+          await _loadData();
+        },
+        icon: const Icon(Icons.casino), // Ícone igual ao do sorteio
+        label: const Text(
+          'Sortear Partidas',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            fontSize: 16,
+          ),
+        ),
+        backgroundColor: const Color(0xFF4B0082), // Amarelo brilhante da logo
+        foregroundColor: Colors.white,
+        elevation: 4, // Dá a sensação de que está flutuando sobre as partidas
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(
+            12,
+          ),
+        ),
+      );
+    } else {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: const Color(0xFF4B0082),
+        backgroundColor: const Color(0xFF4B0082), // Roxo profundo
         foregroundColor: Colors.white,
         elevation: 0,
         title: const Text(
@@ -365,6 +396,7 @@ class _EditMatchResultsState extends State<EditMatchResults> {
       body: SafeArea(
         child: _buildBody(),
       ),
+      floatingActionButton: _getFloatingActionButton(),
     );
   }
 }

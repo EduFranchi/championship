@@ -1,3 +1,5 @@
+import 'dart:developer';
+
 import 'package:championship/loading_screen.dart';
 import 'package:championship/team.dart';
 import 'package:championship/team_item.dart';
@@ -89,13 +91,7 @@ class _AddTeamState extends State<AddTeam> {
 
       result = await widget.deleteAllMatchRoundsDB();
       if (result == 0) {
-        if (!mounted) return;
-        UIUtils.showCustomToast(
-          context,
-          'Erro ao resetar rodadas',
-          Colors.white,
-          Colors.red,
-        );
+        log('Erro ao resetar rodadas');
       }
     } catch (e) {
       if (!mounted) return;
@@ -134,13 +130,7 @@ class _AddTeamState extends State<AddTeam> {
       if (team == null) {
         result = await widget.deleteAllMatchRoundsDB();
         if (result == 0) {
-          if (!mounted) return;
-          UIUtils.showCustomToast(
-            context,
-            'Erro ao resetar rodadas',
-            Colors.white,
-            Colors.red,
-          );
+          log('Erro ao resetar rodadas');
         }
       }
     } catch (e) {
@@ -283,7 +273,6 @@ class _AddTeamState extends State<AddTeam> {
                   },
                   decoration: InputDecoration(
                     labelText: 'Nome da equipe',
-                    prefixIcon: const Icon(Icons.shield_outlined),
                     filled: true,
                     fillColor: Colors.grey[50],
                     border: OutlineInputBorder(

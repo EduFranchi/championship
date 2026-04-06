@@ -5,12 +5,14 @@ class SettingsItem extends StatelessWidget {
   onTap; // VoidCallback é o padrão do Flutter para 'void Function()'
   final IconData iconData;
   final String text;
+  final bool isDelete;
 
   const SettingsItem({
     super.key,
     required this.onTap,
     required this.iconData,
     required this.text,
+    this.isDelete = false,
   });
 
   @override
@@ -32,14 +34,14 @@ class SettingsItem extends StatelessWidget {
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
                   // Usando o withValues atualizado que você já aprendeu!
-                  color: const Color(0xFF4B0082).withValues(alpha: 0.1),
+                  color: isDelete
+                      ? Colors.red.withValues(alpha: 0.1)
+                      : Color(0xFF4B0082).withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   iconData,
-                  color: const Color(
-                    0xFF4B0082,
-                  ), // Ícone com a cor principal escura
+                  color: isDelete ? Colors.red[700] : Color(0xFF4B0082),
                   size: 22,
                 ),
               ),

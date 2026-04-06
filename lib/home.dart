@@ -36,9 +36,17 @@ class _HomeState extends State<Home> {
   List<TeamRanking> _teamRankingList = [];
 
   Future<void> _getWinAndDrawValue() async {
-    int winValue = await CustomSharedPrefs.getWinValue() ?? 3;
+    int? winValue = await CustomSharedPrefs.getWinValue();
+    if (winValue == null) {
+      winValue = 3;
+      CustomSharedPrefs.setWinValue(winValue);
+    }
     _controllerWin.text = winValue.toString();
-    int drawValue = await CustomSharedPrefs.getDrawValue() ?? 1;
+    int? drawValue = await CustomSharedPrefs.getDrawValue();
+    if (drawValue == null) {
+      drawValue = 1;
+      CustomSharedPrefs.setDrawValue(drawValue);
+    }
     _controllerDraw.text = drawValue.toString();
   }
 

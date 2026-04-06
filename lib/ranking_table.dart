@@ -10,21 +10,20 @@ class RankingTable extends StatelessWidget {
     required this.teamRankingList,
   });
 
-  // Constrói a lista de linhas da tabela
   List<Widget> _getRankingTableItemList() {
-    // 1. Adiciona o cabeçalho no topo da lista
     List<Widget> list = [
       const RankingTableItem(isHeader: true),
     ];
 
-    // 2. Adiciona os times
     for (int i = 0; i < teamRankingList.length; i++) {
       list.add(
         RankingTableItem(
           pos: (i + 1).toString(),
           text: teamRankingList[i].team.name,
-          pts: '00', // Troque pela pontuação real futuramente
-          isEven: i % 2 == 0, // Verifica se a linha é par para o efeito zebra
+          played: teamRankingList[i].matchesPlayed
+              .toString(), // Agora pega as partidas jogadas
+          pts: teamRankingList[i].pts.toString(), // Agora pega a pontuação real
+          isEven: i % 2 == 0,
         ),
       );
     }
@@ -35,10 +34,8 @@ class RankingTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          CrossAxisAlignment.stretch, // Estica para ocupar a tela
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Título da tabela
         const Padding(
           padding: EdgeInsets.only(bottom: 12.0),
           child: Text(
@@ -46,27 +43,22 @@ class RankingTable extends StatelessWidget {
             style: TextStyle(
               fontWeight: FontWeight.bold,
               fontSize: 22,
-              color: Colors.black87, // Um preto mais suave que o Colors.black
+              color: Colors.black87,
             ),
           ),
         ),
-
-        // O Container principal que engloba toda a tabela
         Container(
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(12), // Bordas arredondadas
+            borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(
-                  alpha: 0.05,
-                ), // Sombra bem leve e elegante
+                color: Colors.black.withValues(alpha: 0.05),
                 blurRadius: 10,
                 offset: const Offset(0, 4),
               ),
             ],
           ),
-          // O ClipRRect garante que os itens de dentro não ultrapassem a borda arredondada
           child: ClipRRect(
             borderRadius: BorderRadius.circular(12),
             child: Column(

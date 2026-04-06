@@ -8,15 +8,20 @@ void main() {
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
-  // This widget is the root of your application.
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Championship',
       theme: ThemeData(
+        // Alteramos a cor semente para combinar com os botões e detalhes
+        // que criamos (Colors.blue[800]). O Flutter vai gerar uma paleta inteira
+        // baseada nesse azul!
         colorScheme: ColorScheme.fromSeed(
-          seedColor: const Color.fromARGB(255, 85, 0, 100),
+          seedColor: Colors.blue.shade800,
         ),
+        // Opcional: Define uma cor de fundo global um pouco mais "fria" e moderna
+        scaffoldBackgroundColor: Colors.grey.shade50,
+        useMaterial3: true,
       ),
       home: const Home(),
       debugShowCheckedModeBanner: false,

@@ -32,12 +32,77 @@ class _HomeState extends State<Home> {
   List<Team> _teamList = [];
   List<MatchRounds> _matchRoundsList = [];
 
+  // NOVO: Lista responsável por armazenar a classificação ordenada
+  List<TeamRanking> _teamRankingList = [];
+
   Future<void> _getWinAndDrawValue() async {
     int winValue = await CustomSharedPrefs.getWinValue() ?? 0;
     _controllerWin.text = winValue.toString();
     int drawValue = await CustomSharedPrefs.getDrawValue() ?? 0;
     _controllerDraw.text = drawValue.toString();
   }
+
+  // --- NOVA FUNÇÃO DE CÁLCULO ---
+  Future<void> _calculateRanking() async {
+    int winValue = await CustomSharedPrefs.getWinValue() ?? 0;
+    int drawValue = await CustomSharedPrefs.getDrawValue() ?? 0;
+
+    Map<int, int> teamPoints = {};
+    Map<int, int> teamMatchesPlayed = {};
+
+    // 1. Zera a pontuação e os jogos de todos os times
+    for (var team in _teamList) {
+      if (team.id != null) {
+        teamPoints[team.id!] = 0;
+        teamMatchesPlayed[team.id!] = 0;
+      }
+    }
+
+    // 2. Analisa os resultados das partidas
+    for (var match in _matchRoundsList) {
+      if (match.team1Pts != null &&
+          match.team2Pts != null &&
+          match.team1 != null &&
+          match.team2 != null) {
+        int t1 = match.team1!;
+        int t2 = match.team2!;
+
+        // Incrementa um jogo jogado para ambos
+        teamMatchesPlayed[t1] = (teamMatchesPlayed[t1] ?? 0) + 1;
+        teamMatchesPlayed[t2] = (teamMatchesPlayed[t2] ?? 0) + 1;
+
+        // Calcula a pontuação baseada na vitória ou empate
+        if (match.team1Pts! > match.team2Pts!) {
+          teamPoints[t1] = (teamPoints[t1] ?? 0) + winValue;
+        } else if (match.team2Pts! > match.team1Pts!) {
+          teamPoints[t2] = (teamPoints[t2] ?? 0) + winValue;
+        } else {
+          // Empate
+          teamPoints[t1] = (teamPoints[t1] ?? 0) + drawValue;
+          teamPoints[t2] = (teamPoints[t2] ?? 0) + drawValue;
+        }
+      }
+    }
+
+    // 3. Converte os mapas para a nossa Lista de TeamRanking
+    _teamRankingList = _teamList.map((team) {
+      return TeamRanking(
+        team: team,
+        pts: teamPoints[team.id] ?? 0,
+        matchesPlayed: teamMatchesPlayed[team.id] ?? 0,
+      );
+    }).toList();
+
+    // 4. ORDENAÇÃO: 1º Quem tem mais pontos, 2º Ordem Alfabética (se empatar em pontos)
+    _teamRankingList.sort((a, b) {
+      int ptsComparison = b.pts.compareTo(a.pts);
+      if (ptsComparison != 0) {
+        return ptsComparison;
+      }
+      return (a.team.name ?? '').compareTo(b.team.name ?? '');
+    });
+  }
+  // ---------------------------------
 
   void _onTapEditMetrics() async {
     await _getWinAndDrawValue();
@@ -49,12 +114,8 @@ class _HomeState extends State<Home> {
       context: context,
       builder: (_) {
         return GestureDetector(
-          onTap: () {
-            // Remove o foco do teclado se o usuário tocar fora dos campos
-            FocusManager.instance.primaryFocus?.unfocus();
-          },
+          onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
           child: AlertDialog(
-            // 1. Bordas arredondadas modernas para o Dialog inteiro
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -66,8 +127,6 @@ class _HomeState extends State<Home> {
               bottom: 0,
             ),
             actionsPadding: const EdgeInsets.all(16),
-
-            // Título
             title: const Text(
               'Editar Métricas',
               style: TextStyle(
@@ -76,19 +135,15 @@ class _HomeState extends State<Home> {
                 color: Colors.black87,
               ),
             ),
-
             content: Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // 2. Subtítulo sutil para guiar o usuário
                 const Text(
                   'Defina os pontos para cada resultado:',
                   style: TextStyle(color: Colors.black54, fontSize: 14),
                 ),
                 const SizedBox(height: 20),
-
-                // 3. Campo de Vitória (Largo, com rótulo e ícone)
                 TextField(
                   controller: _controllerWin,
                   keyboardType: TextInputType.number,
@@ -112,8 +167,6 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
-                // 4. Campo de Empate
                 TextField(
                   controller: _controllerDraw,
                   keyboardType: TextInputType.number,
@@ -136,25 +189,23 @@ class _HomeState extends State<Home> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 8), // Um respiro antes dos botões
+                const SizedBox(height: 8),
               ],
             ),
-
-            // 5. Hierarquia de botões (Secundário vs Principal)
             actions: [
               TextButton(
                 onPressed: () => Navigator.pop(context),
                 child: Text(
                   'Cancelar',
                   style: TextStyle(
-                    color: Colors.grey[600], // Cor discreta
+                    color: Colors.grey[600],
                     fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[800], // Cor de destaque do app
+                  backgroundColor: Colors.blue[800],
                   foregroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(8),
@@ -174,6 +225,10 @@ class _HomeState extends State<Home> {
 
                   if (!mounted) return;
                   Navigator.pop(context);
+
+                  // NOVO: Recalcula a tabela imediatamente quando salvar novos valores de pontos!
+                  await _calculateRanking();
+                  setState(() {});
                 },
                 child: const Text(
                   'Salvar',
@@ -187,6 +242,8 @@ class _HomeState extends State<Home> {
     );
   }
 
+  // --- MANTENHA AS FUNÇÕES: _onTapAddTeam, _onTapEditMatchResults, _onShowOptionsBottomSheet, _onGenerateRaffle AQUI ---
+  // (Elas são as mesmas que você me mandou)
   void _onTapAddTeam() {
     Navigator.pop(context);
     Navigator.push(
@@ -216,30 +273,24 @@ class _HomeState extends State<Home> {
         ),
       ),
     ).then((_) async {
-      await _loadScreen();
+      await _loadScreen(); // O _loadScreen também recalcula a tabela agora!
     });
   }
 
   void _onShowOptionsBottomSheet() {
     showModalBottomSheet(
       context: context,
-      // 1. Permite que o modal cresça além da metade da tela se tiver muitos itens
       isScrollControlled: true,
-      // 2. Cria o puxador cinza no topo automaticamente!
       showDragHandle: true,
-      // 3. Como usamos o puxador nativo, a cor pode ir direto aqui
       backgroundColor: Colors.white,
-      // 4. Bordas arredondadas nativas do modal
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(
           top: Radius.circular(24),
         ),
       ),
       builder: (BuildContext context) {
-        // Como o Flutter agora desenha o fundo e o puxador, nosso builder fica muito mais limpo
         return SafeArea(
           child: Padding(
-            // Retiramos o padding do topo (top: 0) porque o drag handle já dá o espaçamento ideal
             padding: const EdgeInsets.only(
               left: 24,
               right: 24,
@@ -247,8 +298,7 @@ class _HomeState extends State<Home> {
               top: 0,
             ),
             child: Column(
-              mainAxisSize:
-                  MainAxisSize.min, // Ocupa apenas o tamanho dos itens
+              mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
@@ -260,21 +310,18 @@ class _HomeState extends State<Home> {
                   ),
                 ),
                 const SizedBox(height: 16),
-
                 SettingsItem(
                   onTap: _onTapEditMetrics,
                   iconData: Icons.edit,
                   text: 'Editar métricas',
                 ),
                 const SizedBox(height: 12),
-
                 SettingsItem(
                   onTap: _onTapAddTeam,
                   iconData: Icons.add,
                   text: 'Adicionar equipe',
                 ),
                 const SizedBox(height: 12),
-
                 SettingsItem(
                   onTap: _onTapEditMatchResults,
                   iconData: Icons.edit_square,
@@ -325,7 +372,6 @@ class _HomeState extends State<Home> {
             );
           }
         }
-
         Team lastTeam = shuffledTeams.removeLast();
         shuffledTeams.insert(1, lastTeam);
       }
@@ -334,6 +380,10 @@ class _HomeState extends State<Home> {
       try {
         await _saveMatchRoundsDB(matchRoundsList);
         _matchRoundsList = await _getMatchRoundsListDB();
+
+        // NOVO: Quando um sorteio for gerado, recalcula a tabela (todos com 0 pontos)
+        await _calculateRanking();
+
         if (!mounted) return;
         setState(() {});
       } catch (e) {
@@ -362,21 +412,18 @@ class _HomeState extends State<Home> {
 
   Widget _getBody() {
     if (_isLoading) {
-      return LoadingScreen();
+      return const LoadingScreen();
     } else {
       return SingleChildScrollView(
-        physics: BouncingScrollPhysics(),
+        physics: const BouncingScrollPhysics(),
         child: Padding(
           padding: const EdgeInsets.all(20),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               RankingTable(
-                teamRankingList: _teamList
-                    .map(
-                      (e) => TeamRanking(team: e, pts: 0),
-                    )
-                    .toList(),
+                // NOVO: Passamos a nossa lista ordenada em vez daquele map fake que existia antes!
+                teamRankingList: _teamRankingList,
               ),
               const SizedBox(height: 30),
               Matches(
@@ -391,25 +438,15 @@ class _HomeState extends State<Home> {
     }
   }
 
+  // --- MANTENHA AS FUNÇÕES DE BANCO DE DADOS (GET, SAVE, DELETE) AQUI ---
+  // (_getTeamListDB, _saveTeamDB, _deleteTeamDB, _getMatchRoundsListDB, _saveMatchRoundsDB, _deleteAllMatchRoundsDB)
+
   Future<List<Team>> _getTeamListDB() async {
     final db = await ChampionshipDatabase.instance.database;
-
-    final result = await db
-        .query(
-          ChampionshipDatabase.tableTeamName,
-          orderBy: 'name ASC',
-        )
-        .onError(
-          (error, stackTrace) {
-            throw Exception(error);
-          },
-        )
-        .catchError(
-          (error) {
-            throw Exception(error);
-          },
-        );
-
+    final result = await db.query(
+      ChampionshipDatabase.tableTeamName,
+      orderBy: 'name ASC',
+    );
     List<Team> list = [];
     for (Map<String, Object?> json in result) {
       list.add(Team.fromJson(json));
@@ -417,51 +454,22 @@ class _HomeState extends State<Home> {
     return list;
   }
 
-  Future<int> _saveTeamDB(
-    String teamNameToSave, {
-    Team? team,
-  }) async {
+  Future<int> _saveTeamDB(String teamNameToSave, {Team? team}) async {
     final db = await ChampionshipDatabase.instance.database;
     int result = 0;
     if (team == null) {
-      result = await db
-          .insert(
-            ChampionshipDatabase.tableTeamName,
-            {
-              'name': teamNameToSave,
-            },
-            conflictAlgorithm: ConflictAlgorithm.abort,
-          )
-          .onError(
-            (error, stackTrace) {
-              throw Exception(error);
-            },
-          )
-          .catchError(
-            (error) {
-              throw Exception(error);
-            },
-          );
+      result = await db.insert(
+        ChampionshipDatabase.tableTeamName,
+        {'name': teamNameToSave},
+        conflictAlgorithm: ConflictAlgorithm.abort,
+      );
     } else {
-      result = await db
-          .update(
-            ChampionshipDatabase.tableTeamName,
-            {
-              'name': teamNameToSave,
-            },
-            where: 'id = ?',
-            whereArgs: [team.id],
-          )
-          .onError(
-            (error, stackTrace) {
-              throw Exception(error);
-            },
-          )
-          .catchError(
-            (error) {
-              throw Exception(error);
-            },
-          );
+      result = await db.update(
+        ChampionshipDatabase.tableTeamName,
+        {'name': teamNameToSave},
+        where: 'id = ?',
+        whereArgs: [team.id],
+      );
     }
     return result;
   }
@@ -470,45 +478,18 @@ class _HomeState extends State<Home> {
     int result = 0;
     if (team != null) {
       final db = await ChampionshipDatabase.instance.database;
-
-      result = await db
-          .delete(
-            ChampionshipDatabase.tableTeamName,
-            where: 'id = ?',
-            whereArgs: [team.id],
-          )
-          .onError(
-            (error, stackTrace) {
-              throw Exception(error);
-            },
-          )
-          .catchError(
-            (error) {
-              throw Exception(error);
-            },
-          );
+      result = await db.delete(
+        ChampionshipDatabase.tableTeamName,
+        where: 'id = ?',
+        whereArgs: [team.id],
+      );
     }
     return result;
   }
 
   Future<List<MatchRounds>> _getMatchRoundsListDB() async {
     final db = await ChampionshipDatabase.instance.database;
-
-    final result = await db
-        .query(
-          ChampionshipDatabase.tableMatchRoundsName,
-        )
-        .onError(
-          (error, stackTrace) {
-            throw Exception(error);
-          },
-        )
-        .catchError(
-          (error) {
-            throw Exception(error);
-          },
-        );
-
+    final result = await db.query(ChampionshipDatabase.tableMatchRoundsName);
     List<MatchRounds> list = [];
     for (Map<String, Object?> json in result) {
       list.add(MatchRounds.fromJson(json));
@@ -519,7 +500,6 @@ class _HomeState extends State<Home> {
   Future<void> _saveMatchRoundsDB(List<MatchRounds> matchRoundsList) async {
     final db = await ChampionshipDatabase.instance.database;
     Batch batch = db.batch();
-
     for (MatchRounds matchRounds in matchRoundsList) {
       if (matchRounds.id == null) {
         batch.insert(
@@ -535,25 +515,15 @@ class _HomeState extends State<Home> {
         );
       }
     }
-
-    await batch
-        .commit()
-        .onError(
-          (error, stackTrace) {
-            throw Exception(error);
-          },
-        )
-        .catchError(
-          (error) {
-            throw Exception(error);
-          },
-        );
+    await batch.commit();
   }
 
   Future<int> _deleteAllMatchRoundsDB() async {
     final db = await ChampionshipDatabase.instance.database;
     return db.delete(ChampionshipDatabase.tableMatchRoundsName);
   }
+
+  // --------------------------------------------------------------------------
 
   Future<void> _loadScreen() async {
     _isLoading = true;
@@ -563,11 +533,14 @@ class _HomeState extends State<Home> {
     try {
       _teamList = await _getTeamListDB();
       _matchRoundsList = await _getMatchRoundsListDB();
+
+      // NOVO: Chama a conta mágica aqui! Sempre que o app abrir ou uma tela fechar, a tabela é calculada.
+      await _calculateRanking();
     } catch (e) {
       if (!mounted) return;
       UIUtils.showCustomToast(
         context,
-        'Erro ao carregar lista de equipe',
+        'Erro ao carregar os dados',
         Colors.white,
         Colors.red,
       );
@@ -593,7 +566,7 @@ class _HomeState extends State<Home> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(
+        title: const Text(
           'Championship',
           style: TextStyle(
             fontWeight: FontWeight.bold,
@@ -604,11 +577,11 @@ class _HomeState extends State<Home> {
           TextButton(
             onPressed: _onShowOptionsBottomSheet,
             style: TextButton.styleFrom(
-              padding: EdgeInsets.all(5),
+              padding: const EdgeInsets.all(5),
               minimumSize: Size.zero,
               tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-            child: Icon(Icons.more_vert, size: 30),
+            child: const Icon(Icons.more_vert, size: 30),
           ),
           const SizedBox(width: 10),
         ],
